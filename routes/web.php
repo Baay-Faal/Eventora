@@ -13,29 +13,24 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-// Voir tous les événements (public)
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
-
-// Voir un événement (public)
 Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
 
 // ========== ROUTES AUTHENTIFIÉES ==========
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    // Dashboard
+    // Dashboard (tous les rôles)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Profil (Breeze)
+    // Profil (tous les rôles - Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // ===== ADMIN SEULEMENT =====
     Route::middleware('admin')->group(function () {
-        // Catégories
         Route::resource('categories', CategoryController::class)->except(['show']);
 
-        // Organisateurs
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
@@ -44,19 +39,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
 
-    // ===== ÉVÉNEMENTS (Admin + Organizer) =====
-    Route::get('/my-events', [EventController::class, 'myEvents'])->name('events.my');
-    Route::get('/events-create', [EventController::class, 'create'])->name('events.create');
-    Route::post('/events-store', [EventController::class, 'store'])->name('events.store');
-    Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
-    Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
-    Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+    // ===== ADMIN + ORGANIZER SEULEMENT =====
+    Route::middleware('organizer')->group(function () {
+        Route::get('/my-events', [EventController::class, 'myEvents'])->name('events.my');
+        Route::get('/events-create', [EventController::class, 'create'])->name('events.create');
+        Route::post('/events-store', [EventController::class, 'store'])->name('events.store');
+        Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
+        Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
+        Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
 
-    // ===== INSCRIPTIONS (Admin + Organizer : gérer) =====
-    Route::get('/registrations', [RegistrationController::class, 'index'])->name('registrations.index');
-    Route::patch('/registrations/{registration}/confirm', [RegistrationController::class, 'confirm'])->name('registrations.confirm');
+        Route::get('/registrations', [RegistrationController::class, 'index'])->name('registrations.index');
+        Route::patch('/registrations/{registration}/confirm', [RegistrationController::class, 'confirm'])->name('registrations.confirm');
+    });
 
-    // ===== INSCRIPTIONS (User : s'inscrire) =====
+    // ===== USER (s'inscrire aux événements) =====
     Route::post('/events/{event}/register', [RegistrationController::class, 'store'])->name('registrations.store');
     Route::get('/my-registrations', [RegistrationController::class, 'myRegistrations'])->name('registrations.my');
     Route::patch('/registrations/{registration}/cancel', [RegistrationController::class, 'cancel'])->name('registrations.cancel');
